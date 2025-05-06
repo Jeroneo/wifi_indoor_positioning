@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WiFi Signal Locator</title>
+  <style>
+    :root {
+      --primary-color: #3498db;
+      --secondary-color: #2c3e50;
+      --accent-color: #e74c3c;
+      --light-color: #ecf0f1;
+      --dark-color: #34495e;
+      --success-color: #2ecc71;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f0f0f0;
+      color: var(--dark-color);
+      line-height: 1.6;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      padding: 20px;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    header {
+      background-color: var(--secondary-color);
+      color: white;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    header h1 {
+      display: flex;
+      align-items: center;
+    }
+
+    header h1 .icon {
+      margin-right: 10px;
+    }
+
+    .content {
+      display: flex;
+      flex: 1;
+      gap: 20px;
+    }
+
+    .control-panel {
+      flex: 0 0 300px;
+      background-color: white;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .map-container {
+      flex: 1;
+      background-color: white;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .floor-plan {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      background-color: #ffffff;
+    }
+
+    .signal-strength {
+      margin-top: 20px;
+    }
+
+    .strength-scale {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 5px;
+    }
+
+    .btn {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: bold;
+      transition: background-color 0.3s;
+      margin-top: 10px;
+    }
+
+    .btn:hover {
+      background-color: #2980b9;
+    }
+
+    .btn:disabled {
+      background-color: #95a5a6;
+      cursor: not-allowed;
+    }
+
+    .btn.btn-danger {
+      background-color: var(--accent-color);
+    }
+
+    .btn.btn-danger:hover {
+      background-color: #c0392b;
+    }
+
+    .scan-status {
+      margin: 15px 0;
+      padding: 10px;
+      border-radius: 4px;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .scanning {
+      background-color: #3498db;
+      color: white;
+    }
+
+    .idle {
+      background-color: #ecf0f1;
+      color: #7f8c8d;
+    }
+
+    .success {
+      background-color: var(--success-color);
+      color: white;
+    }
+
+    .prediction-list {
+      margin-top: 20px;
+      overflow-y: auto;
+      max-height: 300px;
+    }
+
+    .prediction-item {
+      background-color: var(--light-color);
+      margin-bottom: 10px;
+      padding: 5px;
+      border-radius: 4px;
+    }
+
+    .prediction-item h4 {
+      color: var(--secondary-color);
+      margin-left: 3px;
+      margin-bottom: 5px;
+      font-style: italic;
+      font-weight: normal;
+    }
+
+    .confidence-meter {
+      height: 4px;
+      background-color: #ecf0f1;
+      border-radius: 4px;
+      margin-top: 5px;
+      overflow: hidden;
+    }
+
+    .confidence-fill {
+      height: 100%;
+      background-color: var(--primary-color);
+    }
+
+    /* Corridor */
+    .corridor {
+      position: absolute;
+      height: 15%;
+      background-color: #e0e0e0;
+      top: 42.5%;
+      left: 5%;
+      right: 5%;
+    }
+
+    /* Rooms */
+    .room {
+      position: absolute;
+      background-color: #f5f5f5;
+      border: 2px solid #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 2vw;
+    }
+
+    .top-room {
+      height: 25%;
+      top: 17%;
+    }
+
+    .bottom-room {
+      height: 25%;
+      top: 57.5%;
+    }
+
+    .staircase {
+      position: absolute;
+      width: 5%;
+      height: 15%;
+      background-color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+
+    .stair-line {
+      width: 80%;
+      height: 4px;
+      background-color: white;
+      margin: 5px 0;
+    }
+
+    .label {
+      position: absolute;
+      font-size: 1.5vw;
+    }
+
+    .building-label {
+      bottom: 2%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-weight: bold;
+      font-size: 2vw;
+    }
+
+    .no-access {
+      position: absolute;
+      background: repeating-linear-gradient(
+        45deg,
+        rgba(245, 245, 245, 0.5),
+        rgba(245, 245, 245, 0.5) 10px,
+        rgba(200, 200, 200, 0.5) 10px,
+        rgba(200, 200, 200, 0.5) 20px
+      );
+      border: 2px solid #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 2vw;
+    }
+
+    .pulsating-dot {
+      width: 10px;
+      height: 10px;
+      background-color: #e74c3c;
+      border-radius: 50%;
+      position: absolute;
+      transform: scale(0);
+      opacity: 0;
+      z-index: 10;
+    }
+
+    @keyframes pulse {
+      0% {
+        transform: scale(1);
+        opacity: 1;
+      }
+      50% {
+        transform: scale(1.8);
+        opacity: 0.7;
+      }
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .pulsating-dot.active {
+      animation: pulse 1s infinite;
+    }
+
+    .settings-panel {
+      margin-top: 20px;
+      border-top: 1px solid #ecf0f1;
+      padding-top: 1px;
+    }
+
+    .settings-panel label {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .settings-panel select,
+    .settings-panel input {
+      width: 100%;
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+      margin-bottom: 10px;
+    }
+
+    footer {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 0.9rem;
+      color: #7f8c8d;
+    }
+
+    @media (max-width: 1000px) {
+      .content {
+        flex-direction: column;
+      }
+      .control-panel {
+        flex: 0 0 auto;
+      }
+      .map-container {
+        height: 600px;
+      }
+    }
+
+    /* Animation for the scanning effect */
+    @keyframes scanEffect {
+      0% { box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(52, 152, 219, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(52, 152, 219, 0); }
+    }
+
+    /* Loader */
+    .loader {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid var(--primary-color);
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+      display: none;
+    }
+
+    .scanning .loader {
+      display: inline-block;
+      margin-right: 10px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Custom checkbox container */
+    .custom-checkbox {
+      display: flex;
+      align-items: center;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-size: 16px;
+      color: #333;
+      margin: 12px 0;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    /* Hide the default checkbox */
+    .custom-checkbox input {
+      position: absolute;
+      opacity: 0;
+      height: 0;
+      width: 0;
+    }
+
+    /* Create a custom checkbox */
+    .checkmark {
+      position: relative;
+      display: inline-block;
+      height: 20px;
+      width: 20px;
+      background-color: #fff;
+      border: 2px solid #3b82f6;
+      border-radius: 4px;
+      margin-right: 10px;
+      transition: all 0.2s ease-in-out;
+    }
+
+    /* On hover */
+    .custom-checkbox:hover .checkmark {
+      background-color: #f0f7ff;
+    }
+
+    /* When checked */
+    .custom-checkbox input:checked ~ .checkmark {
+      background-color: #3b82f6;
+    }
+
+    /* Create the checkmark/indicator (hidden when not checked) */
+    .checkmark:after {
+      content: "";
+      position: absolute;
+      display: none;
+    }
+
+    /* Show the checkmark when checked */
+    .custom-checkbox input:checked ~ .checkmark:after {
+      display: block;
+    }
+
+    /* Style the checkmark/indicator */
+    .custom-checkbox .checkmark:after {
+      left: 7px;
+      top: 3px;
+      width: 5px;
+      height: 10px;
+      border: solid white;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+    
+    /* For focus accessibility */
+    .custom-checkbox input:focus ~ .checkmark {
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><span class="icon">📡</span> WiFi Signal Locator</h1>
+    </header>
+
+    <div class="content">
+      <div class="control-panel">
+        <h2>Control Panel</h2>
+        <p>Scan WiFi signals to locate your position on the floor plan</p>
+
+        <div class="settings-panel">
+          <h3>Settings</h3>
+          <label for="modelSelect">Select Model:</label>
+          <select id="modelSelect">
+            <option value="NN">Neural Network</option>
+            <option value="KNN">K-Nearest Neighbors</option>
+            <option value="SVM">Support Vector Machine</option>
+            <option value="RF">Random Forest</option>
+          </select>
+          <label for="splitSelect">Select Test/Train Split:</label>
+          <select id="splitSelect">
+            <!-- Options will be dynamically populated -->
+          </select>
+          <label for="percentageSelect">Select Access Point Percentage:</label>
+          <select id="percentageSelect">
+            <!-- Options will be dynamically populated -->
+          </select>
+          <label class="custom-checkbox">
+            <input type="checkbox" id="replaceMissingValues" checked>
+            <span class="checkmark"></span>
+            <span>Replace missing values with -95</span>
+          </label>
+        </div>
+        
+        <button id="startScan" class="btn">Start Scanning</button>
+        <button id="stopScan" class="btn btn-danger" disabled>Stop Scanning</button>
+        
+        <div class="scan-status idle">
+          <div class="loader"></div>
+          <span id="scanStatus">Ready to scan</span>
+        </div>
+        
+        <div class="prediction-list">
+          <h3>Top Predictions</h3>
+          <div class="prediction-item ">
+            <h4 id="prediction1Location">No prediction</h4>
+          </div>
+          <div class="prediction-item second-prediction">
+            <h4 id="prediction2Location">No prediction</h4>
+          </div>
+          <div class="prediction-item third-prediction">
+            <h4 id="prediction3Location">No prediction</h4>
+          </div>
+        </div>
+      </div>
+
+      <div class="map-container">
+        <div class="floor-plan">
+          <!-- Corridor -->
+          <div class="corridor">
+            <div class="pulsating-dot" id="Couloir_1" style="left: 9.7%; top: 46%;"></div>
+            <div class="pulsating-dot" id="Couloir_2" style="left: 29.7%; top: 46%;"></div>
+            <div class="pulsating-dot" id="Couloir_3" style="left: 49.7%; top: 46%;"></div>
+            <div class="pulsating-dot" id="Couloir_4" style="left: 69.8%; top: 46%;"></div>
+            <div class="pulsating-dot" id="Couloir_5" style="left: 90%; top: 46%;"></div>
+          </div>
+          
+          <!-- Top Rooms -->
+          <div class="room top-room" style="top:17.5%; width: 18%; left: 5%;">C201<div class="pulsating-dot" id="C201" style="top: 65%;"></div></div>
+          <div class="room top-room" style="top:17.5%; width: 18%; left: 23%;">C203<div class="pulsating-dot" id="C203" style="top: 65%;"></div></div>
+          <div class="room top-room" style="top:17.5%; width: 18%; left: 41%;">C205<div class="pulsating-dot" id="C205" style="top: 65%;"></div></div>
+          <div class="room top-room" style="top:17.5%; width: 18%; left: 59%;">C207<div class="pulsating-dot" id="C207" style="top: 65%;"></div></div>
+          <div class="no-access top-room" style="top:17.5%; width: 18%; left: 77%;">Toilettes</div>
+          
+          <!-- Bottom Rooms - With C207 moved and Toilette with opacity -->
+          <div class="no-access bottom-room" style="width: 18%; left: 5%;">C202</div>
+          <div class="room bottom-room" style="width: 18%; left: 23%;">C204<div class="pulsating-dot" id="C204" style="top: 65%;"></div></div>
+          <div class="room bottom-room" style="width: 18%; left: 41%;">C206<div class="pulsating-dot" id="C206" style="top: 65%;"></div></div>
+          <div class="room bottom-room" style="width: 18%; left: 59%;">C208<div class="pulsating-dot" id="C208" style="top: 65%;"></div></div>
+          <div class="room bottom-room" style="width: 18%; left: 77%;">C210<div class="pulsating-dot" id="C210" style="top: 65%;"></div></div>
+          <!-- Staircases -->
+          <div class="staircase" style="left: 0; top: 42.5%;">
+            <div class="pulsating-dot" id="escalier_B"></div>
+            <div class="stair-line"></div>
+            <div class="stair-line"></div>
+            <div class="stair-line"></div>
+            <div class="stair-line"></div>
+          </div>
+          <div class="staircase" style="right: 0; top: 42.5%;">
+            <div class="pulsating-dot" id="escalier_D"></div>
+            <div class="stair-line"></div>
+            <div class="stair-line"></div>
+            <div class="stair-line"></div>
+            <div class="stair-line"></div>
+          </div>
+          <!-- Labels -->
+          <div class="label building-label">Bâtiment C - 2ème étage</div>
+          <div class="label direction-label" style="left: 0.5%; top: 58%; font-size: 1vw; font-style: italic;">Vers B</div>
+          <div class="label direction-label" style="right: 0.5%; top: 58%; font-size: 1vw; font-style: italic;">Vers D</div>
+        </div>
+      </div>
+    </div>
+
+  <script>
+    // Function to show only one pulsating dot
+    function showDot(dotId) {
+      // First, remove active class from all dots
+      const allDots = document.querySelectorAll('.pulsating-dot');
+      allDots.forEach(dot => {
+        dot.classList.remove('active');
+      });
+      
+      // Then activate only the specified dot
+      const targetDot = document.getElementById(dotId);
+      if (targetDot) {
+        targetDot.classList.add('active');
+      }
+    }
+  
+    // Fetch available splits and percentages from the backend
+    function fetchSplits() {
+      fetch('/get_splits')
+        .then(response => response.json())
+        .then(data => {
+          const splitSelect = document.getElementById('splitSelect');
+          const percentageSelect = document.getElementById('percentageSelect');
+          splitSelect.innerHTML = ''; // Clear existing options
+          percentageSelect.innerHTML = ''; // Clear existing options
+
+          // Populate the dropdown with splits and percentages
+          Object.keys(data.splits).forEach(split => {
+            const option = document.createElement('option');
+            option.value = split;
+            option.textContent = split;
+            splitSelect.appendChild(option);
+          });
+
+          // Update percentages when a split is selected
+          splitSelect.addEventListener('change', () => {
+            const selectedSplit = splitSelect.value;
+            const models = data.splits[selectedSplit] || [];
+            percentageSelect.innerHTML = ''; // Clear percentages
+
+            models.forEach(model => {
+              if (model.model === document.getElementById('modelSelect').value) {
+                model.percentages.forEach(percentage => {
+                  const option = document.createElement('option');
+                  option.value = percentage;
+                  option.textContent = percentage; // Remove '%' from the text
+                  percentageSelect.appendChild(option);
+                });
+              }
+            });
+          });
+
+          // Trigger change event to populate percentages for the default split
+          splitSelect.dispatchEvent(new Event('change'));
+        })
+        .catch(error => console.error('Error fetching splits:', error));
+    }
+
+    // Function to fetch location data
+    function fetchLocation() {
+      const model = document.getElementById('modelSelect').value;
+      const split = document.getElementById('splitSelect').value;
+      const percentage = document.getElementById('percentageSelect').value;
+      const replaceMissing = document.getElementById('replaceMissingValues').checked;
+
+      // Ensure all parameters are selected
+      if (!model || !split || !percentage) {
+        console.error('Model, split, or percentage is not selected.');
+        document.getElementById('scanStatus').textContent = 'Error: Missing selection.';
+        return;
+      }
+
+      fetch(`/get_location?model=${model}&split=${split}&percentage=${percentage}&replace_missing=${replaceMissing}`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then(data => {
+          if (data.error) {
+            console.warn(data.error);
+            document.getElementById('scanStatus').textContent = data.error;
+
+            // Stop scanning
+            document.getElementById('startScan').disabled = false;
+            document.getElementById('stopScan').disabled = true;
+            document.querySelector('.scan-status').classList.remove('scanning');
+            document.querySelector('.scan-status').classList.add('idle');
+            return;
+          }
+
+          // Update the prediction display
+          document.getElementById('prediction1Location').textContent = 
+            `${data.location} (${data.confidence})`;
+          document.getElementById('prediction2Location').textContent = 
+            `${data.second_location} (${data.second_confidence})`;
+          document.getElementById('prediction3Location').textContent = 
+            `${data.third_location} (${data.third_confidence})`;
+
+          // Show the dot for the primary location
+          showDot(data.location);
+
+          // Refetch after data is received
+          if (document.getElementById('startScan').disabled === true) {
+            fetchLocation();
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching location data:', error);
+          document.getElementById('scanStatus').textContent = 'Error fetching location data.';
+          document.getElementById('startScan').disabled = false;
+          document.getElementById('stopScan').disabled = true;
+          document.querySelector('.scan-status').classList.remove('scanning');
+          document.querySelector('.scan-status').classList.add('idle');
+        });
+    }
+  
+    // Start the scanning process
+    document.getElementById('startScan').addEventListener('click', function() {
+      // Update status
+      document.getElementById('scanStatus').textContent = 'Scanning...';
+      document.querySelector('.scan-status').classList.remove('idle');
+      document.querySelector('.scan-status').classList.add('scanning');
+      
+      // Enable/disable buttons
+      document.getElementById('startScan').disabled = true;
+      document.getElementById('stopScan').disabled = false;
+
+      // Start fetching location data
+      fetchLocation();
+    });
+  
+    document.getElementById('stopScan').addEventListener('click', function() {
+      // Update status
+      document.getElementById('scanStatus').textContent = 'Ready to scan';
+      document.querySelector('.scan-status').classList.remove('scanning');
+      document.querySelector('.scan-status').classList.remove('success');
+      document.querySelector('.scan-status').classList.add('idle');
+      
+      // Hide all dots
+      const allDots = document.querySelectorAll('.pulsating-dot');
+      allDots.forEach(dot => {
+        dot.classList.remove('active');
+      });
+      
+      // Enable/disable buttons
+      document.getElementById('startScan').disabled = false;
+      document.getElementById('stopScan').disabled = true;
+
+      // Reset the prediction display
+      document.getElementById('prediction1Location').textContent = 'No prediction';
+      document.getElementById('prediction2Location').textContent = 'No prediction';
+      document.getElementById('prediction3Location').textContent = 'No prediction';
+    });
+
+    // Fetch splits on page load
+    document.addEventListener('DOMContentLoaded', fetchSplits);
+  </script>
+  <footer>
+    Université de Technologie de Troyes - IF23 - Jérôme DO ESPIRITO SANTO
+  </footer>
+</div>
+</body>
+</html>

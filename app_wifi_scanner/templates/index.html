@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WiFi Scanner</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3f37c9;
+            --accent-color: #4895ef;
+            --success-color: #4cc9f0;
+            --light-color: #f8f9fa;
+            --dark-color: #212529;
+            --gray-100: #f8f9fa;
+            --gray-200: #e9ecef;
+            --gray-300: #dee2e6;
+        }
+        
+        body {
+            background-color: #f0f2f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .container {
+            max-width: 1200px;
+        }
+        
+        .app-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 1.5rem 0;
+            border-radius: 0 0 10px 10px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .app-title {
+            font-weight: 700;
+            margin: 0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .app-title i {
+            margin-right: 10px;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s, box-shadow 0.3s;
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-header {
+            background: white;
+            border-bottom: 1px solid var(--gray-200);
+            padding: 1rem 1.5rem;
+        }
+        
+        .card-title {
+            margin: 0;
+            font-weight: 600;
+            color: var(--dark-color);
+            display: flex;
+            align-items: center;
+        }
+        
+        .card-title i {
+            margin-right: 10px;
+            color: var(--primary-color);
+        }
+        
+        .card-body {
+            padding: 1.5rem;
+        }
+        
+        .form-label {
+            font-weight: 500;
+            color: var(--dark-color);
+        }
+        
+        .form-control, .form-select {
+            border-radius: 8px;
+            padding: 0.6rem 1rem;
+            border: 1px solid var(--gray-300);
+            transition: all 0.3s;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(67, 97, 238, 0.25);
+        }
+        
+        .btn {
+            border-radius: 8px;
+            padding: 0.6rem 1.5rem;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+        }
+        
+        .btn-outline-secondary {
+            color: var(--dark-color);
+            border-color: var(--gray-300);
+        }
+        
+        .btn-outline-secondary:hover {
+            background-color: var(--gray-200);
+            color: var(--dark-color);
+        }
+        
+        .progress {
+            height: 12px;
+            border-radius: 6px;
+            overflow: hidden;
+            background-color: var(--gray-200);
+            margin-top: 0.5rem;
+        }
+        
+        .progress-bar {
+            background: linear-gradient(90deg, var(--primary-color), var(--success-color));
+            transition: width 0.5s ease;
+        }
+        
+        .scan-status-container {
+            background-color: var(--gray-100);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1.5rem;
+            border: 1px solid var(--gray-200);
+        }
+        
+        .scan-status-text {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        
+        .acquisition-in-progress {
+            color: var(--primary-color);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+        }
+        
+        .acquisition-in-progress i {
+            animation: pulse 1.5s infinite;
+            margin-right: 8px;
+        }
+        
+        .acquisition-counter {
+            font-weight: 600;
+            color: var(--dark-color);
+            background-color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            border: 1px solid var(--gray-300);
+        }
+        
+        .time-remaining {
+            margin-top: 0.5rem;
+            display: flex;
+            align-items: center;
+            color: var(--dark-color);
+        }
+        
+        .time-remaining i {
+            margin-right: 8px;
+            color: var(--primary-color);
+        }
+        
+        .time-display {
+            font-weight: 600;
+            font-family: monospace;
+        }
+        
+        /* Tree View Styling */
+        .tree-view {
+            padding-left: 0;
+        }
+        
+        .tree-branch {
+            margin-bottom: 10px;
+        }
+        
+        .tree-item {
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+        }
+        
+        .tree-item:hover {
+            background-color: var(--gray-100);
+        }
+        
+        .tree-children {
+            padding-left: 25px;
+            display: none;
+            margin-top: 5px;
+        }
+        
+        .expanded > .tree-children {
+            display: block;
+        }
+        
+        .tree-toggle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            color: var(--primary-color);
+            background-color: var(--gray-100);
+            border-radius: 4px;
+            margin-right: 8px;
+        }
+        
+        .tree-toggle::before {
+            content: '\F282';
+            font-family: 'bootstrap-icons';
+            font-size: 16px;
+            transition: transform 0.2s;
+        }
+        
+        .expanded > .tree-item .tree-toggle::before {
+            transform: rotate(90deg);
+            content: '\F282';
+        }
+        
+        .zone-label, .position-label {
+            font-weight: 500;
+            margin-right: 5px;
+        }
+        
+        .zone-name {
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+        
+        .position-name {
+            color: var(--secondary-color);
+            font-weight: 600;
+        }
+        
+        .file-item {
+            display: flex;
+            align-items: center;
+            padding: 6px 12px;
+            margin: 4px 0;
+            border-radius: 6px;
+            background-color: var(--gray-100);
+            border: 1px solid var(--gray-200);
+        }
+        
+        .file-item i {
+            color: var(--accent-color);
+            margin-right: 8px;
+        }
+        
+        /* Animations */
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease forwards;
+        }
+        
+        /* Modal customization */
+        .modal-content {
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: none;
+        }
+        
+        .modal-header {
+            border-bottom: 1px solid var(--gray-200);
+            padding: 1.5rem;
+        }
+        
+        .modal-footer {
+            border-top: 1px solid var(--gray-200);
+            padding: 1.5rem;
+        }
+        
+        .modal-title {
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-header">
+        <div class="container">
+            <h1 class="app-title"><i class="bi bi-wifi"></i> WiFi Scanner</h1>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card fade-in">
+                    <div class="card-header">
+                        <h5 class="card-title"><i class="bi bi-play-circle"></i> Start WiFi Scanning</h5>
+                    </div>
+                    <div class="card-body">
+                        <form action="/scan" method="post" id="scanForm">
+                            <div class="mb-3">
+                                <label for="zone" class="form-label">Zone</label>
+                                <div class="input-group">
+                                    <select class="form-select" id="zone" name="zone">
+                                        {% for zone in zones %}
+                                            <option value="{{ zone }}">{{ zone }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#newZoneModal">
+                                        <i class="bi bi-plus-lg"></i> New
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="position" class="form-label">Position</label>
+                                <div class="input-group">
+                                    <select class="form-select" id="position" name="position">
+                                        {% for position in positions %}
+                                            <option value="{{ position }}">{{ position }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#newPositionModal">
+                                        <i class="bi bi-plus-lg"></i> New
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="nb_acquisitions" class="form-label">Number of Acquisitions</label>
+                                <input type="number" class="form-control" id="nb_acquisitions" name="nb_acquisitions" value="10" min="1" max="100">
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary w-100" id="startScanBtn">
+                                <i class="bi bi-broadcast-pin"></i> Start Scanning
+                            </button>
+                        </form>
+
+                        <div id="scanStatus" class="scan-status-container d-none">
+                            <div class="scan-status-text">
+                                <div class="acquisition-in-progress">
+                                    <i class="bi bi-radar"></i> Scanning in progress
+                                </div>
+                                <div class="acquisition-counter">
+                                    <span id="currentAcquisition">0</span>/<span id="totalAcquisitions">10</span>
+                                </div>
+                            </div>
+                            <div class="progress">
+                                <div id="scanProgressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                            </div>
+                            <div class="time-remaining">
+                                <i class="bi bi-clock"></i> Estimated time remaining: 
+                                <span id="timeRemaining" class="time-display ms-1">--:--</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card fade-in" style="animation-delay: 0.1s;">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title"><i class="bi bi-folder2-open"></i> Directory Structure</h5>
+                        <button class="btn btn-sm btn-outline-primary" id="refreshStructure">
+                            <i class="bi bi-arrow-clockwise"></i> Refresh
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="directoryTree" class="tree-view">
+                            <!-- Tree structure will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal for New Zone -->
+    <div class="modal fade" id="newZoneModal" tabindex="-1" aria-labelledby="newZoneModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="newZoneModalLabel">Create New Zone</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="newZoneName" class="form-label">Zone Name</label>
+                        <input type="text" class="form-control" id="newZoneName" placeholder="Enter zone name">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="createZoneBtn">
+                        <i class="bi bi-plus-circle"></i> Create Zone
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal for New Position -->
+    <div class="modal fade" id="newPositionModal" tabindex="-1" aria-labelledby="newPositionModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="newPositionModalLabel">Create New Position</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="newPositionName" class="form-label">Position Name</label>
+                        <input type="text" class="form-control" id="newPositionName" placeholder="Enter position name">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="createPositionBtn">
+                        <i class="bi bi-plus-circle"></i> Create Position
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Global variables
+            let isScanning = false;
+            let scanStartTime = null;
+            let averageAcquisitionTime = 2; // Initial guess, will be updated with real data
+            let completedAcquisitions = []; // Array to store timestamps of completed acquisitions
+            let statusCheckInterval = null;
+            
+            // Add event listener for zone selection change
+            document.getElementById('zone').addEventListener('change', function() {
+                updatePositionsForZone(this.value);
+            });
+            
+            // Function to update positions dropdown based on selected zone
+            function updatePositionsForZone(zoneName) {
+                fetch('/get_structure')
+                    .then(response => response.json())
+                    .then(data => {
+                        const positionSelect = document.getElementById('position');
+                        // Save current selection if possible
+                        const currentSelection = positionSelect.value;
+                        
+                        // Clear existing options
+                        positionSelect.innerHTML = '';
+                        
+                        // Get positions for selected zone
+                        const zoneData = data[zoneName] || {};
+                        const positions = Object.keys(zoneData);
+                        
+                        if (positions.length === 0) {
+                            // If no positions found, add a placeholder
+                            const option = document.createElement('option');
+                            option.value = "";
+                            option.textContent = "No positions available - create one";
+                            positionSelect.appendChild(option);
+                        } else {
+                            // Add all positions for the selected zone
+                            positions.forEach(position => {
+                                const option = document.createElement('option');
+                                option.value = position;
+                                option.textContent = position;
+                                positionSelect.appendChild(option);
+                                
+                                // Restore previous selection if it exists in new options
+                                if (position === currentSelection) {
+                                    option.selected = true;
+                                }
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching positions for zone:', error);
+                    });
+            }
+            
+            // Render directory tree
+            function renderDirectoryTree(structure) {
+                const treeContainer = document.getElementById('directoryTree');
+                treeContainer.innerHTML = '';
+                
+                // Check if structure is empty
+                if (Object.keys(structure).length === 0) {
+                    const emptyMessage = document.createElement('div');
+                    emptyMessage.className = 'text-center text-muted py-4';
+                    emptyMessage.innerHTML = '<i class="bi bi-folder-x" style="font-size: 2rem;"></i><p class="mt-2">No data available yet</p>';
+                    treeContainer.appendChild(emptyMessage);
+                    return;
+                }
+                
+                for (const zone in structure) {
+                    const zoneBranch = document.createElement('div');
+                    zoneBranch.className = 'tree-branch';
+                    
+                    const zoneItem = document.createElement('div');
+                    zoneItem.className = 'tree-item';
+                    zoneItem.innerHTML = `
+                        <div class="tree-toggle"></div>
+                        <span class="zone-label">Zone:</span>
+                        <span class="zone-name">${zone}</span>
+                    `;
+                    
+                    const zoneChildren = document.createElement('div');
+                    zoneChildren.className = 'tree-children';
+                    
+                    // Add click handler for zone item
+                    zoneItem.addEventListener('click', function(e) {
+                        // Check if clicked element is the toggle button or its child elements
+                        if (e.target === this || e.target.classList.contains('tree-toggle') || 
+                            e.target.classList.contains('zone-label') || e.target.classList.contains('zone-name')) {
+                            // Toggle the expanded class on the parent branch
+                            zoneBranch.classList.toggle('expanded');
+                        }
+                    });
+                    
+                    for (const position in structure[zone]) {
+                        const positionBranch = document.createElement('div');
+                        positionBranch.className = 'tree-branch';
+                        
+                        const positionItem = document.createElement('div');
+                        positionItem.className = 'tree-item';
+                        positionItem.innerHTML = `
+                            <div class="tree-toggle"></div>
+                            <span class="position-label">Position:</span>
+                            <span class="position-name">${position}</span>
+                        `;
+                        
+                        const positionChildren = document.createElement('div');
+                        positionChildren.className = 'tree-children';
+                        
+                        // Add click handler for position item
+                        positionItem.addEventListener('click', function(e) {
+                            // Check if clicked element is the toggle button or its child elements
+                            if (e.target === this || e.target.classList.contains('tree-toggle') || 
+                                e.target.classList.contains('position-label') || e.target.classList.contains('position-name')) {
+                                // Toggle the expanded class on the parent branch
+                                positionBranch.classList.toggle('expanded');
+                            }
+                        });
+                        
+                        for (const file of structure[zone][position]) {
+                            const fileItem = document.createElement('div');
+                            fileItem.className = 'file-item';
+                            fileItem.innerHTML = `<i class="bi bi-file-earmark-text"></i> ${file}`;
+                            positionChildren.appendChild(fileItem);
+                        }
+                        
+                        positionBranch.appendChild(positionItem);
+                        positionBranch.appendChild(positionChildren);
+                        zoneChildren.appendChild(positionBranch);
+                    }
+                    
+                    zoneBranch.appendChild(zoneItem);
+                    zoneBranch.appendChild(zoneChildren);
+                    treeContainer.appendChild(zoneBranch);
+                }
+            }
+            
+            // Helper function to format time remaining
+            function formatTimeRemaining(seconds) {
+                const mins = Math.floor(seconds / 60);
+                const secs = Math.floor(seconds % 60);
+                return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            }
+            
+            // Calculate moving average of acquisition time based on completed acquisitions
+            function calculateAverageAcquisitionTime() {
+                if (completedAcquisitions.length <= 1) {
+                    return averageAcquisitionTime; // Return current average if not enough data
+                }
+                
+                let totalTime = 0;
+                for (let i = 1; i < completedAcquisitions.length; i++) {
+                    totalTime += completedAcquisitions[i] - completedAcquisitions[i-1];
+                }
+                
+                return totalTime / (completedAcquisitions.length - 1);
+            }
+            
+            // Update scan status from server
+            function updateScanStatus() {
+                fetch('/scan_status')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.is_scanning) {
+                            // Show scan status UI
+                            document.getElementById('scanStatus').classList.remove('d-none');
+                            document.getElementById('startScanBtn').disabled = true;
+                            
+                            // Update progress information
+                            const currentAcquisition = data.current_acquisition;
+                            const totalAcquisitions = data.total_acquisitions;
+                            
+                            document.getElementById('currentAcquisition').textContent = currentAcquisition;
+                            document.getElementById('totalAcquisitions').textContent = totalAcquisitions;
+                            
+                            const progressPercentage = (currentAcquisition / totalAcquisitions) * 100;
+                            document.getElementById('scanProgressBar').style.width = progressPercentage + '%';
+                            
+                            // Track completed acquisitions for time calculation
+                            if (completedAcquisitions.length < currentAcquisition) {
+                                const now = Date.now();
+                                completedAcquisitions.push(now);
+                                
+                                // Update average acquisition time with real data
+                                if (completedAcquisitions.length > 1) {
+                                    averageAcquisitionTime = calculateAverageAcquisitionTime();
+                                }
+                            }
+                            
+                            // Calculate time remaining based on real acquisition times
+                            const remainingAcquisitions = totalAcquisitions - currentAcquisition;
+                            const estimatedTimeRemaining = remainingAcquisitions * averageAcquisitionTime / 1000;
+                            document.getElementById('timeRemaining').textContent = formatTimeRemaining(estimatedTimeRemaining);
+                            
+                            // If scan is complete
+                            if (currentAcquisition === totalAcquisitions) {
+                                setTimeout(() => {
+                                    fetch('/get_structure')
+                                        .then(response => response.json())
+                                        .then(data => {
+                                            renderDirectoryTree(data);
+                                        });
+                                }, 1000);
+                            }
+                        } else if (isScanning) {
+                            // Scan has completed
+                            resetScanUI();
+                            fetch('/get_structure')
+                                .then(response => response.json())
+                                .then(data => {
+                                    renderDirectoryTree(data);
+                                });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching scan status:', error);
+                    });
+            }
+            
+            // Reset scan UI elements
+            function resetScanUI() {
+                document.getElementById('scanStatus').classList.add('d-none');
+                document.getElementById('startScanBtn').disabled = false;
+                isScanning = false;
+                completedAcquisitions = [];
+                
+                if (statusCheckInterval) {
+                    clearInterval(statusCheckInterval);
+                    statusCheckInterval = null;
+                }
+                
+                // Show a toast notification
+                showToast('Scanning completed successfully');
+            }
+            
+            // Create a toast notification
+            function showToast(message) {
+                // Create toast container if it doesn't exist
+                let toastContainer = document.querySelector('.toast-container');
+                if (!toastContainer) {
+                    toastContainer = document.createElement('div');
+                    toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+                    document.body.appendChild(toastContainer);
+                }
+                
+                // Create toast element
+                const toastEl = document.createElement('div');
+                toastEl.className = 'toast show';
+                toastEl.setAttribute('role', 'alert');
+                toastEl.setAttribute('aria-live', 'assertive');
+                toastEl.setAttribute('aria-atomic', 'true');
+                
+                toastEl.innerHTML = `
+                    <div class="toast-header">
+                        <i class="bi bi-check-circle-fill me-2 text-success"></i>
+                        <strong class="me-auto">WiFi Scanner</strong>
+                        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                `;
+                
+                toastContainer.appendChild(toastEl);
+                
+                // Auto-hide toast after 5 seconds
+                setTimeout(() => {
+                    toastEl.remove();
+                }, 5000);
+                
+                // Add close button functionality
+                const closeBtn = toastEl.querySelector('.btn-close');
+                closeBtn.addEventListener('click', () => {
+                    toastEl.remove();
+                });
+            }
+            
+            // Initial rendering of directory tree
+            const initialStructure = {{ structure|tojson }};
+            renderDirectoryTree(initialStructure);
+            
+            // Initial load of positions for the selected zone
+            const initialZone = document.getElementById('zone').value;
+            if (initialZone) {
+                updatePositionsForZone(initialZone);
+            }
+            
+            // Event listener for refresh button
+            document.getElementById('refreshStructure').addEventListener('click', function() {
+                const button = this;
+                const originalContent = button.innerHTML;
+                
+                // Show loading indicator
+                button.innerHTML = '<i class="bi bi-arrow-repeat"></i> Refreshing...';
+                button.disabled = true;
+                
+                fetch('/get_structure')
+                    .then(response => response.json())
+                    .then(data => {
+                        renderDirectoryTree(data);
+                        button.innerHTML = originalContent;
+                        button.disabled = false;
+                    })
+                    .catch(error => {
+                        console.error('Error refreshing structure:', error);
+                        button.innerHTML = originalContent;
+                        button.disabled = false;
+                    });
+            });
+            
+            // Create new zone
+            document.getElementById('createZoneBtn').addEventListener('click', function() {
+                const zoneName = document.getElementById('newZoneName').value.trim();
+                if (zoneName) {
+                    const zoneSelect = document.getElementById('zone');
+                    const option = document.createElement('option');
+                    option.value = zoneName;
+                    option.textContent = zoneName;
+                    zoneSelect.appendChild(option);
+                    option.selected = true;
+                    
+                    // Close modal
+                    bootstrap.Modal.getInstance(document.getElementById('newZoneModal')).hide();
+                    document.getElementById('newZoneName').value = '';
+                    
+                    // Show confirmation
+                    showToast(`Zone "${zoneName}" created successfully`);
+                    
+                    // Update positions for this new zone (likely none yet)
+                    updatePositionsForZone(zoneName);
+                }
+            });
+            
+            // Create new position
+            document.getElementById('createPositionBtn').addEventListener('click', function() {
+                const positionName = document.getElementById('newPositionName').value.trim();
+                if (positionName) {
+                    const positionSelect = document.getElementById('position');
+                    const option = document.createElement('option');
+                    option.value = positionName;
+                    option.textContent = positionName;
+                    positionSelect.appendChild(option);
+                    option.selected = true;
+                    
+                    // Close modal
+                    bootstrap.Modal.getInstance(document.getElementById('newPositionModal')).hide();
+                    document.getElementById('newPositionName').value = '';
+                    
+                    // Show confirmation
+                    showToast(`Position "${positionName}" created successfully`);
+                }
+            });
+            
+            // Start scanning with accurate time tracking
+            document.getElementById('scanForm').addEventListener('submit', function(e) {
+                e.preventDefault(); // Prevent form submission
+                
+                // If already scanning, don't allow another scan
+                if (isScanning) {
+                    return;
+                }
+                
+                // Set scanning flag and initialize tracking
+                isScanning = true;
+                scanStartTime = Date.now();
+                completedAcquisitions = [scanStartTime]; // Start tracking times
+                
+                // Get scan parameters for UI display
+                const zone = document.getElementById('zone').value;
+                const position = document.getElementById('position').value;
+                
+                // Show toast notification
+                showToast(`Starting scan for Zone: ${zone}, Position: ${position}`);
+                
+                // Send the scan request
+                const formData = new FormData(this);
+                fetch('/scan', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Start checking status from server
+                        statusCheckInterval = setInterval(updateScanStatus, 500);
+                    } else {
+                        alert('Error: ' + data.message);
+                        resetScanUI();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error starting scan:', error);
+                    resetScanUI();
+                });
+            });
+        });
+    </script>
+</body>
+</html>
