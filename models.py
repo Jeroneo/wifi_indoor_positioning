@@ -414,22 +414,18 @@ def train_SVM(X_train, X_test, y_train, y_test, dataset_name="dataset", split_fo
         # Ensure the output directory exists
         ensure_directory_exists(f'{split_folder}/SVM/{dataset_name}')
 
-        # Replace missing values with a constant (-95)
-        X_train_imputed = np.nan_to_num(X_train, nan=-95)
-        X_test_imputed = np.nan_to_num(X_test, nan=-95)
-
         # Train SVM model
         svm_model = SVC(kernel='linear')
-        svm_model.fit(X_train_imputed, y_train)
+        svm_model.fit(X_train, y_train)
 
         # Evaluate model
-        accuracy = svm_model.score(X_test_imputed, y_test)
+        accuracy = svm_model.score(X_test, y_test)
 
         # Save the entire model
         torch.save(svm_model, f'{split_folder}/SVM/{dataset_name}/SVM_missing_value.pth')
 
         zone_labels = np.load('./models/zone_labels.npy', allow_pickle=True)
-        y_pred = svm_model.predict(X_test_imputed)
+        y_pred = svm_model.predict(X_test)
         cm, report, precision, f1 = calculate_metrics(y_test, y_pred, list(range(len(zone_labels))))
         save_metrics_to_csv(cm, report, zone_labels, f'{split_folder}/SVM/{dataset_name}/SVM_missing_value')
         save_confusion_matrix_plot(cm, zone_labels, f'{split_folder}/SVM/{dataset_name}/SVM_missing_value')
@@ -452,10 +448,6 @@ def train_RandomForest(X_train, X_test, y_train, y_test, dataset_name="dataset",
         # Ensure the output directory exists
         ensure_directory_exists(f'{split_folder}/RandomForest/{dataset_name}')
 
-        # Replace missing values with a constant (-95)
-        X_train_imputed = np.nan_to_num(X_train, nan=-95)
-        X_test_imputed = np.nan_to_num(X_test, nan=-95)
-
         # Test multiple n_estimators values
         n_estimators_values = [3, 5, 10, 20, 30, 40, 50, 100, 150, 200, 250, 500]
         best_n_estimators = None
@@ -467,8 +459,8 @@ def train_RandomForest(X_train, X_test, y_train, y_test, dataset_name="dataset",
 
         for n_estimators in rf_progress_bar:
             rf_model = RandomForestClassifier(n_estimators=n_estimators, random_state=42)
-            rf_model.fit(X_train_imputed, y_train)
-            accuracy = rf_model.score(X_test_imputed, y_test)
+            rf_model.fit(X_train, y_train)
+            accuracy = rf_model.score(X_test, y_test)
 
             if accuracy > best_accuracy:
                 best_n_estimators = n_estimators
@@ -484,7 +476,7 @@ def train_RandomForest(X_train, X_test, y_train, y_test, dataset_name="dataset",
         torch.save(best_model, f'{split_folder}/RandomForest/{dataset_name}/RF_n{best_n_estimators}_missing_value.pth')
 
         zone_labels = np.load('./models/zone_labels.npy', allow_pickle=True)
-        y_pred = best_model.predict(X_test_imputed)
+        y_pred = best_model.predict(X_test)
         cm, report, precision, f1 = calculate_metrics(y_test, y_pred, list(range(len(zone_labels))))
         save_metrics_to_csv(cm, report, zone_labels, f'{split_folder}/RandomForest/{dataset_name}/RF_n{best_n_estimators}_missing_value')
         save_confusion_matrix_plot(cm, zone_labels, f'{split_folder}/RandomForest/{dataset_name}/RF_n{best_n_estimators}_missing_value')
